@@ -16,6 +16,7 @@
 
 package com.fragula2.compose
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -40,13 +41,14 @@ import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavBackStackEntry
@@ -105,15 +107,16 @@ fun NavGraphBuilder.swipeable(
     content: @Composable (NavBackStackEntry) -> Unit,
 ) {
     addDestination(
-        SwipeBackNavigator.Destination(provider[SwipeBackNavigator::class], content).apply {
-            this.route = route
-            arguments.forEach { (argumentName, argument) ->
-                addArgument(argumentName, argument)
-            }
-            deepLinks.forEach { deepLink ->
-                addDeepLink(deepLink)
-            }
-        },
+        SwipeBackNavigator.Destination(provider[SwipeBackNavigator::class], content)
+            .apply {
+                this.route = route
+                arguments.forEach { (argumentName, argument) ->
+                    addArgument(argumentName, argument)
+                }
+                deepLinks.forEach { deepLink ->
+                    addDeepLink(deepLink)
+                }
+            },
     )
 }
 
@@ -165,7 +168,7 @@ fun FragulaNavHost(
 
     // endregion
 
-    val parallaxOffset = remember { mutableFloatStateOf(0f) }
+    var parallaxOffset by remember { mutableFloatStateOf(0f) }
 
     for ((index, backStackEntry) in currentBackStack.withIndex()) { // FIXME don't render all entries at once
         SwipeableBox(
@@ -179,11 +182,11 @@ fun FragulaNavHost(
             parallaxFactor = parallaxFactor,
             animDurationMs = animDurationMs,
             elevationAmount = elevationAmount,
-            offsetProvider = { parallaxOffset.floatValue },
+            offsetProvider = { parallaxOffset },
             backToProvider = { swipeBackNavigator.backTo != null },
             positionChanger = { position, positionOffset, positionOffsetPixels ->
                 onPageScrolled(position, positionOffset, positionOffsetPixels)
-                parallaxOffset.floatValue = positionOffset
+                parallaxOffset = positionOffset
             },
             onDragFinished = { swipeBackNavigator.slideOut = it == SwipeState.SLIDE_OUT },
             onScrollFinished = { swipeBackNavigator.markTransitionComplete(backStackEntry) },
@@ -204,6 +207,7 @@ fun FragulaNavHost(
     // endregion
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 private fun SwipeableBox(
     navController: NavHostController,
@@ -224,13 +228,17 @@ private fun SwipeableBox(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    BoxWithConstraints(modifier) {
+    BoxWithConstraints(
+        modifier = modifier,
+        contentAlignment = Alignment.TopStart,
+    ) {
         val pageStart = 0f
         val pageEnd = if (swipeDirection.isHorizontal()) {
             constraints.maxWidth.toFloat()
         } else {
             constraints.maxHeight.toFloat()
         }
+
         val parallaxFormula = {
             if (swipeDirection.isReversed()) {
                 maxHeight.value * (1.0f - offsetProvider()) / parallaxFactor
@@ -263,6 +271,7 @@ private fun SwipeableBox(
                     swipeState = SwipeState.FOLLOW_POINTER
                     onScrollFinished()
                 }
+
                 pageEnd -> {
                     pointerPosition = pageStart
                     swipeState = SwipeState.FOLLOW_POINTER
@@ -332,6 +341,12 @@ private fun SwipeableBox(
                             onDragFinished(swipeState)
                         }
                     },
+                    onDragCancelled = {
+                        if (swipeState == SwipeState.FOLLOW_POINTER) {
+                            swipeState = SwipeState.SLIDE_IN
+                            onDragFinished(swipeState)
+                        }
+                    }
                 )
                 .graphicsLayer {
                     val translation = if (swipeDirection.isReversed()) {
@@ -352,6 +367,7 @@ private fun SwipeableBox(
         val applyElevation by remember(swipeDirection) {
             derivedStateOf { scrollPosition > pageStart && scrollPosition < pageEnd }
         }
+
         if (applyElevation) {
             PageElevation(
                 positionProvider = { scrollPosition },

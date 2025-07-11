@@ -17,14 +17,12 @@
 plugins {
     id("fragula-module")
     id("publish-module")
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "com.fragula2.compose"
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.get()
-    }
     buildFeatures {
         compose = true
     }
@@ -37,11 +35,11 @@ publishModule {
 }
 
 dependencies {
-
     // Core
     implementation(libs.kotlin)
 
     // Compose
+    implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.foundation)
     implementation(libs.compose.navigation)

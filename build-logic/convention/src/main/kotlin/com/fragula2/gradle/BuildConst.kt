@@ -19,9 +19,9 @@ package com.fragula2.gradle
 object BuildConst {
 
     const val MIN_SDK = 23
-    const val TARGET_SDK = 34
-    const val COMPILE_SDK = 34
+    const val TARGET_SDK = 35
+    const val COMPILE_SDK = 35
 
     const val LIBRARY_MIN_SDK = 21
-    const val LIBRARY_COMPILE_SDK = 34
+    const val LIBRARY_COMPILE_SDK = 35
 }

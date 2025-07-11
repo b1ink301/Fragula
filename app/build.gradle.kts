@@ -15,12 +15,14 @@
  */
 
 import com.fragula2.gradle.BuildConst
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.android.navigation)
     alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.kotlin.compose)
     id("stub-module")
 }
 
@@ -53,14 +55,13 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.get()
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
     sourceSets {
         named("main") {
@@ -74,7 +75,6 @@ android {
 }
 
 dependencies {
-
     // Core
     implementation(libs.kotlin)
     implementation(libs.androidx.core)
@@ -89,14 +89,17 @@ dependencies {
     implementation(libs.coil)
 
     // Compose
+    implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material)
     implementation(libs.compose.activity)
     implementation(libs.compose.navigation)
-    implementation(libs.compose.preview)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.ui.tooling)
     implementation(libs.compose.drawable)
-    debugImplementation(libs.compose.tooling)
     debugImplementation(libs.compose.manifest)
+
+    implementation(libs.material.icons.extended.android)
 
     // AAC
     implementation(libs.androidx.viewmodel)

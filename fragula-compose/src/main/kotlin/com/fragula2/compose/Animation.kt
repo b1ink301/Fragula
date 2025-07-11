@@ -37,8 +37,10 @@ import kotlin.math.abs
 internal fun Modifier.animateDrag(
     enabled: Boolean,
     swipeDirection: SwipeDirection,
+    onDragStarted: () -> Unit = {},
     onDragChanged: (Float) -> Unit = {},
     onDragFinished: (Float) -> Unit = {},
+    onDragCancelled: () -> Unit = {},
 ): Modifier = composed {
     if (!enabled) return@composed this
     val velocityTracker = VelocityTracker()
@@ -66,6 +68,14 @@ internal fun Modifier.animateDrag(
                     onDragFinished(abs(velocity)) // Provide the absolute value as it might be negative
                     dragOffset = 0f
                 },
+                onDragCancel = {
+                    velocityTracker.resetTracking()
+                    onDragCancelled()
+                    dragOffset = 0f
+                },
+                onDragStart = {
+                    onDragStarted()
+                }
             )
         } else {
             detectHorizontalDragGestures(
@@ -89,6 +99,14 @@ internal fun Modifier.animateDrag(
                     onDragFinished(abs(velocity)) // Provide the absolute value as it might be negative
                     dragOffset = 0f
                 },
+                onDragCancel = {
+                    velocityTracker.resetTracking()
+                    onDragCancelled()
+                    dragOffset = 0f
+                },
+                onDragStart = {
+                    onDragStarted()
+                }
             )
         }
     }
